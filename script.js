@@ -26,6 +26,10 @@
     { id: "tile_2048", icon: "🏆", title: "2048達成", desc: "伝説の2048タイルを作る", check: s => s.bestTileEver >= 2048 },
     { id: "tile_4096", icon: "👑", title: "限界突破", desc: "4096のタイルを作る", check: s => s.bestTileEver >= 4096 },
     { id: "tile_8192", icon: "🌟", title: "伝説を超えて", desc: "8192のタイルを作る", check: s => s.bestTileEver >= 8192 },
+    { id: "tile_16384", icon: "🌌", title: "異次元へ", desc: "16384のタイルを作る", check: s => s.bestTileEver >= 16384 },
+    { id: "tile_32768", icon: "🪐", title: "宇宙の彼方", desc: "32768のタイルを作る", check: s => s.bestTileEver >= 32768 },
+    { id: "tile_65536", icon: "🌀", title: "理論値突破", desc: "65536のタイルを作る", check: s => s.bestTileEver >= 65536 },
+    { id: "tile_131072", icon: "♾️", title: "神話の領域", desc: "131072のタイルを作る(4×4理論上の最大値)", check: s => s.bestTileEver >= 131072 },
     { id: "games_1", icon: "🎮", title: "はじめまして", desc: "1回プレイする", check: s => s.gamesPlayed >= 1 },
     { id: "games_10", icon: "🕹️", title: "常連さん", desc: "10回プレイする", check: s => s.gamesPlayed >= 10 },
     { id: "games_50", icon: "🎯", title: "ベテラン", desc: "50回プレイする", check: s => s.gamesPlayed >= 50 },
@@ -33,8 +37,11 @@
     { id: "score_5000", icon: "📈", title: "スコアハンター", desc: "1ゲームで5,000点獲得", check: s => s.bestScoreEver >= 5000 },
     { id: "score_20000", icon: "🚀", title: "スコアマニア", desc: "1ゲームで20,000点獲得", check: s => s.bestScoreEver >= 20000 },
     { id: "score_50000", icon: "💥", title: "スコアの化身", desc: "1ゲームで50,000点獲得", check: s => s.bestScoreEver >= 50000 },
+    { id: "score_100000", icon: "🌈", title: "10万点の壁", desc: "1ゲームで100,000点獲得", check: s => s.bestScoreEver >= 100000 },
+    { id: "score_300000", icon: "🎆", title: "スコアの神域", desc: "1ゲームで300,000点獲得", check: s => s.bestScoreEver >= 300000 },
     { id: "combo_5", icon: "🔥", title: "コンボスターター", desc: "5連続コンボを決める", check: s => s.maxCombo >= 5 },
     { id: "combo_8", icon: "⚡", title: "コンボマスター", desc: "8連続コンボを決める", check: s => s.maxCombo >= 8 },
+    { id: "combo_12", icon: "☄️", title: "コンボの化身", desc: "12連続コンボを決める", check: s => s.maxCombo >= 12 },
     { id: "undo_free", icon: "🧠", title: "ノーミス撤退", desc: "Undoを使わずに2048に到達", check: (s, g) => !!(g && g.wonThisGame && !g.usedUndoThisGame) },
     { id: "streak_3", icon: "📆", title: "三日坊主卒業", desc: "3日連続でプレイ", check: s => s.streakDays >= 3 },
     { id: "streak_7", icon: "🗓️", title: "週間チャレンジャー", desc: "7日連続でプレイ", check: s => s.streakDays >= 7 },
@@ -55,6 +62,24 @@
 
   // 更新履歴 — 変更のたびに先頭へ追記し、CURRENT_VERSION も更新する
   const CHANGELOG = [
+    {
+      version: "1.2.0",
+      date: "2026-08-17",
+      notes: [
+        "演出を全体的に強化(花火風の多段紙吹雪・マージ時の衝撃波リング・コンボ8以上での特大演出)",
+        "紙吹雪に円形・星形などの形状バリエーションを追加",
+        "高速な点滅・明滅系の演出は健康面に配慮して使わず、滑らかな一度きりの動きのみで演出",
+      ],
+    },
+    {
+      version: "1.1.0",
+      date: "2026-08-17",
+      notes: [
+        "2048を超えても無限にタイルが成長するように変更(8192超は色を無限生成)",
+        "16384・32768・65536・131072タイル実績と、10万点・30万点スコア実績、12連コンボ実績を追加(実績は全34種に)",
+        "歴代トップ10のハイスコア履歴を統計パネルに追加",
+      ],
+    },
     {
       version: "1.0.0",
       date: "2026-08-17",
@@ -130,7 +155,7 @@
       xp: 0, level: 1, lastPlayedDate: null, streakDays: 0,
       dailyBestScore: {}, dailyPlayed: 0, lastDailyDate: null,
       unlockedThemes: ["classic"], currentTheme: "classic", soundOn: true,
-      achievements: {}, recentAchievements: [],
+      achievements: {}, recentAchievements: [], scoreHistory: [],
     };
   }
   function loadStats() {
@@ -257,13 +282,18 @@
   function fontSizeFor(cellPx, value) {
     const len = String(value).length;
     let ratio = 0.46;
-    if (len === 2) ratio = 0.4; else if (len === 3) ratio = 0.33; else if (len >= 4) ratio = 0.26;
+    if (len === 2) ratio = 0.4; else if (len === 3) ratio = 0.33; else if (len === 4) ratio = 0.26; else if (len === 5) ratio = 0.22; else if (len >= 6) ratio = 0.18;
     return Math.round(cellPx * ratio);
   }
+  const KNOWN_TILE_VALUES = [2, 4, 8, 16, 32, 64, 128, 256, 512, 1024, 2048, 4096, 8192];
   function tileClass(value) {
-    const known = [2, 4, 8, 16, 32, 64, 128, 256, 512, 1024, 2048, 4096, 8192];
-    const v = known.includes(value) ? value : value > 8192 ? 8192 : 2;
-    return "tile-" + v;
+    return KNOWN_TILE_VALUES.includes(value) ? "tile-" + value : "tile-super";
+  }
+  // 8192を超えるタイルは無限に固有色を生成(理論値を気にせず好きなだけ伸ばせるように)
+  function superTileColor(value) {
+    const power = Math.log2(value);
+    const hue = Math.round((power * 47) % 360);
+    return `hsl(${hue}, 78%, 54%)`;
   }
   function styleTile(el, r, c, value) {
     el.style.width = metrics.cell + "px";
@@ -271,6 +301,14 @@
     el.style.transform = `translate(${cellX(c)}px, ${cellY(r)}px)`;
     el.style.fontSize = fontSizeFor(metrics.cell, value) + "px";
     el.dataset.r = r; el.dataset.c = c; el.dataset.value = value;
+    if (!KNOWN_TILE_VALUES.includes(value)) {
+      const color = superTileColor(value);
+      el.style.background = color;
+      el.style.color = "#ffffff";
+      el.style.boxShadow = `0 0 18px ${color}, 0 3px 10px rgba(0,0,0,0.3)`;
+    } else {
+      el.style.background = ""; el.style.color = ""; el.style.boxShadow = "";
+    }
   }
   function createTileEl(id, value, r, c) {
     const el = document.createElement("div");
@@ -289,6 +327,25 @@
       if (t) { const el = createTileEl(t.id, t.value, r, c); tilesContainer.appendChild(el); tileEls.set(t.id, el); }
     }
   }
+  function tileColorFor(value) {
+    if (!KNOWN_TILE_VALUES.includes(value)) return superTileColor(value);
+    return getComputedStyle(document.documentElement).getPropertyValue(`--tile-${value}-bg`).trim() || "#f2a33c";
+  }
+  // マージ時に一度だけ広がって消える衝撃波リング(連続点滅ではない単発の演出)
+  function spawnMergeRing(r, c, value) {
+    const layer = document.getElementById("effects");
+    if (!layer) return;
+    const size = metrics.cell * 0.85;
+    const el = document.createElement("div");
+    el.className = "merge-ring";
+    el.style.width = size + "px";
+    el.style.height = size + "px";
+    el.style.left = cellX(c) + (metrics.cell - size) / 2 + "px";
+    el.style.top = cellY(r) + (metrics.cell - size) / 2 + "px";
+    el.style.color = tileColorFor(value);
+    layer.appendChild(el);
+    setTimeout(() => el.remove(), 600);
+  }
   function renderMovements(movements) {
     const tilesContainer = document.getElementById("tiles");
     const toRemove = [];
@@ -304,7 +361,10 @@
         el.style.opacity = "0";
         tilesContainer.appendChild(el);
         tileEls.set(m.id, el);
-        setTimeout(() => { el.style.opacity = "1"; el.classList.add("merged"); }, POP_DELAY);
+        setTimeout(() => {
+          el.style.opacity = "1"; el.classList.add("merged");
+          if (m.value >= 64) spawnMergeRing(m.toR, m.toC, m.value);
+        }, POP_DELAY);
       } else if (m.kind === "new") {
         setTimeout(() => {
           const el = createTileEl(m.id, m.value, m.toR, m.toC);
@@ -364,31 +424,69 @@
     confettiCanvas.width = window.innerWidth; confettiCanvas.height = window.innerHeight;
     cctx = confettiCanvas.getContext("2d");
   }
-  function confettiBurst(count) {
-    const colors = ["#f2a33c", "#f472b6", "#7c5cf2", "#4ade80", "#6ee7f2", "#f0ba1f"];
+  const CONFETTI_COLORS = ["#f2a33c", "#f472b6", "#7c5cf2", "#4ade80", "#6ee7f2", "#f0ba1f", "#ff6b6b", "#a78bfa"];
+  const CONFETTI_SHAPES = ["rect", "rect", "circle", "star"];
+  function confettiBurstAt(originX, originY, count, spread) {
+    const s = spread || 260;
     for (let i = 0; i < count; i++) {
       particles.push({
-        x: window.innerWidth / 2 + (Math.random() - 0.5) * 240,
-        y: window.innerHeight * 0.25,
-        vx: (Math.random() - 0.5) * 9,
-        vy: Math.random() * -6 - 2,
-        g: 0.25 + Math.random() * 0.12,
-        size: 4 + Math.random() * 5,
-        color: colors[Math.floor(Math.random() * colors.length)],
+        x: originX + (Math.random() - 0.5) * s,
+        y: originY,
+        vx: (Math.random() - 0.5) * 10,
+        vy: Math.random() * -7 - 2,
+        g: 0.24 + Math.random() * 0.13,
+        size: 4 + Math.random() * 6,
+        color: CONFETTI_COLORS[Math.floor(Math.random() * CONFETTI_COLORS.length)],
+        shape: CONFETTI_SHAPES[Math.floor(Math.random() * CONFETTI_SHAPES.length)],
         rot: Math.random() * Math.PI * 2,
-        vr: (Math.random() - 0.5) * 0.3,
-        life: 90 + Math.random() * 40,
+        vr: (Math.random() - 0.5) * 0.35,
+        life: 95 + Math.random() * 45,
+        maxLife: 140,
       });
     }
     if (!confettiRAF) confettiLoop();
+  }
+  function confettiBurst(count) {
+    confettiBurstAt(window.innerWidth / 2, window.innerHeight * 0.25, count, 260);
+  }
+  // 大きな達成を花火のように多段バースト(点滅ではなく滑らかな連続演出)
+  function fireworksCelebration(totalCount, burstsN) {
+    const n = burstsN || 3;
+    for (let i = 0; i < n; i++) {
+      setTimeout(() => {
+        const ox = window.innerWidth * (0.2 + Math.random() * 0.6);
+        const oy = window.innerHeight * (0.16 + Math.random() * 0.14);
+        confettiBurstAt(ox, oy, Math.round(totalCount / n), 220);
+      }, i * 240);
+    }
+  }
+  function drawStar(ctx, size) {
+    ctx.beginPath();
+    for (let i = 0; i < 5; i++) {
+      const a1 = (i * 2 * Math.PI) / 5 - Math.PI / 2;
+      const a2 = a1 + Math.PI / 5;
+      ctx.lineTo(Math.cos(a1) * size, Math.sin(a1) * size);
+      ctx.lineTo(Math.cos(a2) * size * 0.45, Math.sin(a2) * size * 0.45);
+    }
+    ctx.closePath();
   }
   function confettiLoop() {
     cctx.clearRect(0, 0, confettiCanvas.width, confettiCanvas.height);
     particles.forEach(p => { p.x += p.vx; p.y += p.vy; p.vy += p.g; p.rot += p.vr; p.life--; });
     particles = particles.filter(p => p.life > 0 && p.y < confettiCanvas.height + 40);
     for (const p of particles) {
-      cctx.save(); cctx.translate(p.x, p.y); cctx.rotate(p.rot);
-      cctx.fillStyle = p.color; cctx.fillRect(-p.size / 2, -p.size / 2, p.size, p.size * 0.6);
+      const fade = Math.min(1, p.life / 30);
+      cctx.save();
+      cctx.globalAlpha = fade;
+      cctx.translate(p.x, p.y); cctx.rotate(p.rot);
+      cctx.fillStyle = p.color;
+      if (p.shape === "circle") {
+        cctx.beginPath(); cctx.arc(0, 0, p.size / 2, 0, Math.PI * 2); cctx.fill();
+      } else if (p.shape === "star") {
+        drawStar(cctx, p.size * 0.7); cctx.fill();
+      } else {
+        cctx.fillRect(-p.size / 2, -p.size / 2, p.size, p.size * 0.6);
+      }
       cctx.restore();
     }
     confettiRAF = particles.length > 0 ? requestAnimationFrame(confettiLoop) : null;
@@ -438,7 +536,7 @@
           stats.xp += 50;
           showToast({ icon: a.icon, title: "実績解除！", desc: a.title });
           playSound("achievement");
-          if (["tile_2048", "tile_4096", "tile_8192", "games_100", "level_10", "all_themes"].includes(a.id)) confettiBurst(120);
+          if (["tile_2048", "tile_4096", "tile_8192", "tile_16384", "tile_32768", "tile_65536", "tile_131072", "games_100", "level_10", "all_themes", "score_100000", "score_300000"].includes(a.id)) fireworksCelebration(220, 4);
           changed = true; unlockedAny = true;
         }
       }
@@ -446,7 +544,7 @@
     const info = levelInfo(stats.xp);
     if (info.level > (stats.level || 1)) {
       showToast({ icon: "⭐", title: `レベルアップ！ Lv.${info.level}`, desc: levelTitleFor(info.level) });
-      confettiBurst(60); playSound("levelup");
+      confettiBurst(80); playSound("levelup");
     }
     stats.level = info.level;
     if (unlockedAny) saveStats();
@@ -535,7 +633,20 @@
       ["実績解除数", Object.keys(stats.achievements).length + " / " + ACHIEVEMENTS.length],
       ["解放テーマ数", stats.unlockedThemes.length + " / " + THEMES.length],
     ];
-    document.getElementById("statsBody").innerHTML = rows.map(([k, v]) => `<div class="stat-card-row"><span>${k}</span><b>${v}</b></div>`).join("");
+    const historyHtml = renderScoreHistoryHtml();
+    document.getElementById("statsBody").innerHTML =
+      rows.map(([k, v]) => `<div class="stat-card-row"><span>${k}</span><b>${v}</b></div>`).join("") + historyHtml;
+  }
+  const MEDALS = ["🥇", "🥈", "🥉"];
+  function renderScoreHistoryHtml() {
+    const list = stats.scoreHistory || [];
+    if (!list.length) return '<div class="history-title">🏅 歴代トップ10</div><div class="empty-note">まだ記録がありません。プレイしてハイスコアを刻もう！</div>';
+    const rows = list.map((h, i) => {
+      const rank = MEDALS[i] || `${i + 1}位`;
+      const modeLabel = h.mode === "daily" ? "デイリー" : "クラシック";
+      return `<div class="history-row"><span class="history-rank">${rank}</span><span class="history-score">${h.score.toLocaleString()}</span><span class="history-meta">最大${h.tile} ・ ${modeLabel} ・ ${h.date}</span></div>`;
+    }).join("");
+    return `<div class="history-title">🏅 歴代トップ10</div><div class="history-list">${rows}</div>`;
   }
   function renderAchievementsPanel() {
     document.getElementById("achBody").innerHTML = ACHIEVEMENTS.map(a => {
@@ -566,20 +677,21 @@
   // ------------------------------------------------------------------
   // オーバーレイ
   // ------------------------------------------------------------------
-  function showOverlayBase(emoji, title, desc, showContinue) {
+  function showOverlayBase(emoji, title, desc, showContinue, isWin) {
     document.getElementById("overlayEmoji").textContent = emoji;
     document.getElementById("overlayTitle").textContent = title;
     document.getElementById("overlayDesc").textContent = desc;
     document.getElementById("overlayContinue").style.display = showContinue ? "inline-block" : "none";
+    document.getElementById("overlay").classList.toggle("win", !!isWin);
     document.getElementById("overlay").classList.remove("hidden");
   }
   function showWinOverlay() {
-    playSound("win"); confettiBurst(150);
-    showOverlayBase("🎉", "2048達成！おめでとう！", `スコア: ${score.toLocaleString()} — このまま続けてハイスコアを狙おう`, true);
+    playSound("win"); fireworksCelebration(260, 5);
+    showOverlayBase("🎉", "2048達成！おめでとう！", `スコア: ${score.toLocaleString()} — このまま続けてハイスコアを狙おう`, true, true);
   }
   function showGameOverOverlay() {
     playSound("gameover");
-    showOverlayBase("💀", "ゲームオーバー", `最終スコア: ${score.toLocaleString()}（ベスト: ${stats.bestScoreEver.toLocaleString()}）`, false);
+    showOverlayBase("💀", "ゲームオーバー", `最終スコア: ${score.toLocaleString()}（ベスト: ${stats.bestScoreEver.toLocaleString()}）`, false, false);
   }
   function hideOverlay() { document.getElementById("overlay").classList.add("hidden"); }
   function overlayVisible() { return !document.getElementById("overlay").classList.contains("hidden"); }
@@ -641,6 +753,12 @@
     fullRerender();
     if (!hasMovesLeft()) showGameOverOverlay();
   }
+  function recordScoreHistory() {
+    stats.scoreHistory = stats.scoreHistory || [];
+    stats.scoreHistory.push({ score, tile: maxTileInGrid(), date: todayStr(), mode: isDailyMode ? "daily" : "classic" });
+    stats.scoreHistory.sort((a, b) => b.score - a.score);
+    stats.scoreHistory = stats.scoreHistory.slice(0, 10);
+  }
   function handleGameOver() {
     stats.gamesPlayed++;
     stats.totalScore += score;
@@ -650,6 +768,7 @@
       const prev = stats.dailyBestScore[d] || 0;
       if (score > prev) stats.dailyBestScore[d] = score;
     }
+    recordScoreHistory();
     saveStats();
     localStorage.removeItem(SAVE_KEY);
     checkProgress();
@@ -682,8 +801,11 @@
 
     playSound(result.mergeCount > 0 ? "merge" : "move", result.maxMergeValue);
     if (gained > 0) showScoreDelta(gained);
-    document.getElementById("comboValue").classList.remove("pop"); void document.getElementById("comboValue").offsetWidth;
-    if (result.mergeCount > 0) document.getElementById("comboValue").classList.add("pop");
+    const comboEl = document.getElementById("comboValue");
+    comboEl.classList.remove("pop", "mega"); void comboEl.offsetWidth;
+    comboEl.classList.toggle("hot", combo >= 5);
+    if (result.mergeCount > 0) comboEl.classList.add(combo >= 8 ? "mega" : "pop");
+    if (combo >= 8) { confettiBurstAt(comboEl.getBoundingClientRect().left, comboEl.getBoundingClientRect().top, 18, 60); }
 
     locked = true;
     updateHUD();

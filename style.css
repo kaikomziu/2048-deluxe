@@ -270,8 +270,16 @@ body {
 
 .combo-card { text-align: center; }
 .combo-label { font-size: 0.68rem; letter-spacing: 1.5px; color: var(--text-faint); font-weight: 700; }
-.combo-value { font-size: 1.6rem; font-weight: 800; color: var(--accent); margin: 2px 0 8px; transition: transform 0.2s ease; }
+.combo-value { font-size: 1.6rem; font-weight: 800; color: var(--accent); margin: 2px 0 8px; transition: color 0.25s ease; }
 .combo-value.pop { animation: mergePop 0.3s ease; }
+.combo-value.hot { color: var(--accent2); }
+.combo-value.mega { animation: comboMega 0.5s cubic-bezier(.2,1.6,.4,1); }
+@keyframes comboMega {
+  0% { transform: scale(1) rotate(0deg); }
+  35% { transform: scale(1.55) rotate(-7deg); }
+  65% { transform: scale(1.2) rotate(5deg); }
+  100% { transform: scale(1) rotate(0deg); }
+}
 .combo-bar { height: 6px; border-radius: 4px; background: rgba(255,255,255,0.1); overflow: hidden; }
 .combo-fill { height: 100%; width: 0%; background: linear-gradient(90deg, var(--accent), var(--accent2)); transition: width 0.25s ease; }
 
@@ -342,6 +350,17 @@ body {
 .tile.new { animation: popIn 180ms ease; }
 .tile.merged { animation: mergePop 180ms ease; z-index: 5; }
 
+/* マージ時の衝撃波リング(一度だけ拡大して消える。点滅なし) */
+.effects { position: absolute; inset: 0; pointer-events: none; z-index: 8; overflow: visible; }
+.merge-ring {
+  position: absolute; border-radius: 50%; border: 3px solid currentColor;
+  opacity: 0.85; animation: ringExpand 560ms cubic-bezier(.15,.8,.3,1) forwards;
+}
+@keyframes ringExpand {
+  0% { transform: scale(0.3); opacity: 0.85; }
+  100% { transform: scale(2.4); opacity: 0; }
+}
+
 .tile-2 { background: var(--tile-2-bg); color: var(--tile-2-fg); }
 .tile-4 { background: var(--tile-4-bg); color: var(--tile-4-fg); }
 .tile-8 { background: var(--tile-8-bg); color: var(--tile-8-fg); }
@@ -360,6 +379,13 @@ body {
 .tile-4096 { background-image: linear-gradient(100deg, var(--tile-4096-bg) 40%, var(--accent) 50%, var(--tile-4096-bg) 60%); color: var(--tile-4096-fg); }
 .tile-8192 { background-image: linear-gradient(100deg, var(--tile-8192-bg) 40%, var(--accent2) 50%, var(--tile-8192-bg) 60%); color: var(--tile-8192-fg); box-shadow: 0 0 18px var(--accent2), 0 3px 10px rgba(0,0,0,0.3); }
 
+/* 8192超えのタイルはJSが値に応じて背景色を無限生成(理論値なしでどこまでも伸ばせる) */
+.tile-super { font-weight: 900; animation: spinGlow 4s linear infinite; }
+@keyframes spinGlow {
+  0%, 100% { filter: brightness(1) saturate(1); }
+  50% { filter: brightness(1.15) saturate(1.3); }
+}
+
 .overlay {
   position: absolute; inset: 0; border-radius: var(--radius-lg);
   background: rgba(10,8,20,0.72); backdrop-filter: blur(6px);
@@ -369,7 +395,13 @@ body {
 }
 .overlay.hidden { opacity: 0; pointer-events: none; }
 .overlay-card { text-align: center; padding: 20px; }
-.overlay-emoji { font-size: 3rem; margin-bottom: 6px; }
+.overlay-emoji { font-size: 3rem; margin-bottom: 6px; animation: popIn 0.5s cubic-bezier(.2,1.6,.4,1); }
+.overlay.win .overlay-card { animation: winGlowOnce 1.1s ease-out; }
+@keyframes winGlowOnce {
+  0% { filter: drop-shadow(0 0 0 transparent); transform: scale(0.9); }
+  40% { filter: drop-shadow(0 0 24px var(--accent2)); }
+  100% { filter: drop-shadow(0 0 0 transparent); transform: scale(1); }
+}
 .overlay-title { font-size: 1.5rem; font-weight: 800; margin-bottom: 6px; }
 .overlay-desc { color: var(--text-dim); margin-bottom: 16px; }
 .overlay-btns { display: flex; gap: 10px; justify-content: center; }
@@ -385,7 +417,7 @@ body {
   animation: toastIn 0.35s cubic-bezier(.2,1.4,.4,1) forwards;
 }
 .toast.out { animation: toastOut 0.3s ease forwards; }
-.toast .ic { font-size: 1.6rem; filter: drop-shadow(0 0 6px var(--accent)); }
+.toast .ic { font-size: 1.6rem; filter: drop-shadow(0 0 6px var(--accent)); animation: popIn 0.4s cubic-bezier(.2,1.6,.4,1); }
 .toast .body b { display: block; font-size: 0.85rem; }
 .toast .body span { display: block; font-size: 0.72rem; color: var(--text-dim); }
 
@@ -410,6 +442,16 @@ body {
 
 .stat-card-row { display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid var(--glass-border); font-size: 0.9rem; }
 .stat-card-row b { color: var(--accent); }
+
+.history-title { font-weight: 700; font-size: 0.9rem; margin: 18px 0 10px; }
+.history-list { display: flex; flex-direction: column; gap: 6px; }
+.history-row {
+  display: grid; grid-template-columns: 34px auto 1fr; align-items: baseline; gap: 8px;
+  padding: 8px 10px; border-radius: var(--radius-sm); background: var(--glass); border: 1px solid var(--glass-border);
+}
+.history-rank { font-size: 0.95rem; font-weight: 800; }
+.history-score { font-weight: 800; font-variant-numeric: tabular-nums; }
+.history-meta { font-size: 0.68rem; color: var(--text-faint); text-align: right; }
 
 .ach-item {
   display: flex; gap: 12px; align-items: center; padding: 12px; border-radius: var(--radius-md);
