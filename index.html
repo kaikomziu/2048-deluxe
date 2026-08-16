@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1, user-scalable=no">
+<title>2048 DELUXE</title>
+<link rel="stylesheet" href="style.css">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><rect width=%22100%22 height=%22100%22 rx=%2220%22 fill=%22%23f2a33c%22/><text x=%2250%22 y=%2266%22 font-size=%2244%22 text-anchor=%22middle%22 fill=%22white%22 font-family=%22sans-serif%22 font-weight=%22bold%22>2048</text></svg>">
+</head>
+<body>
+<div class="bg-orbs">
+  <div class="orb orb1"></div>
+  <div class="orb orb2"></div>
+  <div class="orb orb3"></div>
+</div>
+
+<div class="app">
+
+  <header class="topbar">
+    <div class="brand">
+      <span class="brand-tile">2048</span>
+      <span class="brand-text">DELUXE</span>
+    </div>
+    <nav class="topnav">
+      <button class="nav-btn" data-panel="stats" title="統計">📊</button>
+      <button class="nav-btn" data-panel="achievements" title="実績">🏆</button>
+      <button class="nav-btn" data-panel="themes" title="テーマ">🎨</button>
+      <button class="nav-btn" id="soundToggle" title="サウンド">🔊</button>
+    </nav>
+  </header>
+
+  <main class="layout">
+
+    <section class="side side-left">
+      <div class="card scorecard">
+        <div class="score-box">
+          <span class="score-label">SCORE</span>
+          <span class="score-value" id="score">0</span>
+          <span class="score-delta" id="scoreDelta"></span>
+        </div>
+        <div class="score-box">
+          <span class="score-label">BEST</span>
+          <span class="score-value" id="best">0</span>
+        </div>
+      </div>
+
+      <div class="card combo-card">
+        <div class="combo-label">COMBO</div>
+        <div class="combo-value" id="comboValue">×1</div>
+        <div class="combo-bar"><div class="combo-fill" id="comboFill"></div></div>
+      </div>
+
+      <div class="card daily-card">
+        <div class="daily-title">📅 デイリーチャレンジ</div>
+        <div class="daily-desc">今日だけの固定シードで挑戦。ベストスコアを記録しよう。</div>
+        <div class="daily-best">ベスト: <span id="dailyBest">-</span></div>
+        <button class="btn small" id="dailyBtn">今日の盤面に挑む</button>
+      </div>
+    </section>
+
+    <section class="board-wrap">
+      <div class="board-header">
+        <div class="board-title">
+          <h1 id="modeTitle">クラシック 4×4</h1>
+          <p class="board-sub" id="modeSub">矢印キー / スワイプ でタイルを動かそう</p>
+        </div>
+        <div class="board-actions">
+          <button class="btn ghost" id="undoBtn" title="1手戻す (残り3回)">↩ <span id="undoCount">3</span></button>
+          <button class="btn ghost" id="newGameBtn">🔄 新規</button>
+        </div>
+      </div>
+
+      <div class="board-frame">
+        <div class="board" id="board">
+          <div class="grid-bg" id="gridBg"></div>
+          <div class="tiles" id="tiles"></div>
+          <div class="overlay hidden" id="overlay">
+            <div class="overlay-card">
+              <div class="overlay-emoji" id="overlayEmoji">🎉</div>
+              <div class="overlay-title" id="overlayTitle">ゲームオーバー</div>
+              <div class="overlay-desc" id="overlayDesc">スコア: 0</div>
+              <div class="overlay-btns">
+                <button class="btn primary" id="overlayRetry">もう一度</button>
+                <button class="btn ghost" id="overlayContinue" style="display:none">続ける</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <p class="hint">スマホは指でスワイプ操作 / PCは矢印キーかWASD</p>
+    </section>
+
+    <section class="side side-right">
+      <div class="card level-card">
+        <div class="level-head">
+          <span class="level-badge" id="levelBadge">Lv.1</span>
+          <span class="level-title" id="levelTitle">パズル見習い</span>
+        </div>
+        <div class="xp-bar"><div class="xp-fill" id="xpFill"></div></div>
+        <div class="xp-label"><span id="xpCur">0</span> / <span id="xpMax">100</span> XP</div>
+      </div>
+
+      <div class="card stats-mini">
+        <div class="stat-row"><span>プレイ回数</span><b id="statGames">0</b></div>
+        <div class="stat-row"><span>最大タイル</span><b id="statMaxTile">-</b></div>
+        <div class="stat-row"><span>実績達成</span><b id="statAch">0 / 0</b></div>
+        <div class="stat-row"><span>連続プレイ日数</span><b id="statStreak">0</b></div>
+      </div>
+
+      <div class="card achpreview">
+        <div class="achpreview-head">最近の実績</div>
+        <div id="recentAch" class="recentAch-list">
+          <div class="empty-note">まだありません。プレイして解除しよう！</div>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <footer class="footer">
+    <button class="version-tag" id="versionTag">v1.0.0 ・ 2026-08-17</button>
+  </footer>
+</div>
+
+<!-- Achievement Toast -->
+<div class="toast-stack" id="toastStack"></div>
+
+<!-- Side Panels -->
+<div class="panel-backdrop hidden" id="panelBackdrop"></div>
+
+<div class="panel hidden" id="panel-stats">
+  <div class="panel-head">
+    <h2>📊 統計</h2>
+    <button class="panel-close" data-close>✕</button>
+  </div>
+  <div class="panel-body" id="statsBody"></div>
+</div>
+
+<div class="panel hidden" id="panel-achievements">
+  <div class="panel-head">
+    <h2>🏆 実績</h2>
+    <button class="panel-close" data-close>✕</button>
+  </div>
+  <div class="panel-body" id="achBody"></div>
+</div>
+
+<div class="panel hidden" id="panel-themes">
+  <div class="panel-head">
+    <h2>🎨 テーマ</h2>
+    <button class="panel-close" data-close>✕</button>
+  </div>
+  <div class="panel-body" id="themeBody"></div>
+</div>
+
+<div class="panel hidden" id="panel-changelog">
+  <div class="panel-head">
+    <h2>📝 更新履歴</h2>
+    <button class="panel-close" data-close>✕</button>
+  </div>
+  <div class="panel-body" id="changelogBody"></div>
+</div>
+
+<canvas id="confetti"></canvas>
+
+<script src="script.js"></script>
+</body>
+</html>
